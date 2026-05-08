@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<a href="/tickets/" class="btn btn-secondary mb-3">← Volver</a>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h3>{{ ticket.titulo }}</h3>
+
+        <p><b>Estado:</b> {{ ticket.estado }}</p>
+        <p><b>Prioridad:</b> {{ ticket.prioridad }}</p>
+        <p><b>Descripción:</b> {{ ticket.descripcion }}</p>
+    </div>
+</div>
+
+<!-- CAMBIO DE ESTADO -->
+<div class="card mb-3">
+    <div class="card-body">
+
+        <h5>Cambiar estado</h5>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <select name="estado" class="form-select mb-2">
+                <option value="OPEN">OPEN</option>
+                <option value="IN_PROGRESS">IN PROGRESS</option>
+                <option value="CLOSED">CLOSED</option>
+            </select>
+
+            <button class="btn btn-primary">Actualizar</button>
+        </form>
+
+    </div>
+</div>
+
+<!-- COMENTARIOS -->
+<div class="card mb-3">
+    <div class="card-body">
+
+        <h5>Comentarios</h5>
+
+        {% for c in comentarios %}
+            <div class="border p-2 mb-2">
+                <b>{{ c.autor }}</b>
+                <small class="text-muted">{{ c.fecha }}</small>
+                <p>{{ c.texto }}</p>
+            </div>
+        {% empty %}
+            <p>No hay comentarios</p>
+        {% endfor %}
+
+    </div>
+</div>
+
+<!-- FORMULARIO -->
+<div class="card">
+    <div class="card-body">
+
+        <h5>Añadir comentario</h5>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input class="form-control mb-2" name="autor" placeholder="Autor">
+
+            <textarea class="form-control mb-2" name="texto" placeholder="Comentario"></textarea>
+
+            <button class="btn btn-success">Enviar</button>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

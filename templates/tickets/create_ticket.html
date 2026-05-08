@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Crear Ticket</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <input class="form-control mb-2" name="titulo" placeholder="Título" required>
+
+    <textarea class="form-control mb-2" name="descripcion" placeholder="Descripción" required></textarea>
+
+    <select class="form-control mb-2" name="prioridad">
+        <option value="LOW">LOW</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="HIGH">HIGH</option>
+        <option value="CRITICAL">CRITICAL</option>
+    </select>
+
+    <input class="form-control mb-2" name="usuario_reporta" placeholder="Usuario" required>
+
+    <button class="btn btn-success">Crear</button>
+</form>
+
+{% endblock %}
