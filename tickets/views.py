@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Ticket, Comentario
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import TicketSerializer
 
 def ticket_list(request):
     tickets = Ticket.objects.all().order_by('-fecha_apertura')
@@ -50,3 +53,12 @@ def delete_ticket(request, id):
     ticket = Ticket.objects.get(id=id)
     ticket.delete()
     return redirect('ticket_list')
+
+@api_view(['GET'])
+def api_tickets(request):
+
+    tickets = Ticket.objects.all()
+
+    serializer = TicketSerializer(tickets, many=True)
+
+    return Response(serializer.data)
