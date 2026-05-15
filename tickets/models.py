@@ -1,44 +1,72 @@
 from django.db import models
-from django.contrib.auth.models import User
-from users.models import Technician
+
+
+class Usuario(models.Model):
+    dni = models.CharField(max_length=20)
+    nombre = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    email = models.EmailField()
+    telefono = models.CharField(max_length=20)
+    departamento = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellidos}"
+
+
+class Tecnico(models.Model):
+    dni = models.CharField(max_length=20)
+    nombre = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    email = models.EmailField()
+    telefono = models.CharField(max_length=20)
+    especialidad = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellidos}"
 
 
 class Ticket(models.Model):
-
-    ESTADO = [
-        ('OPEN', 'Open'),
-        ('IN_PROGRESS', 'In progress'),
-        ('CLOSED', 'Closed'),
+    ESTADOS = [
+        ('no_empezado', 'No empezado'),
+        ('en_proceso', 'En proceso'),
+        ('completado', 'Completado'),
     ]
 
-    PRIORIDAD = [
-        ('LOW', 'Low'),
-        ('MEDIUM', 'Medium'),
-        ('HIGH', 'High'),
-        ('CRITICAL', 'Critical'),
+    PRIORIDADES = [
+        ('baja', 'Baja'),
+        ('media', 'Media'),
+        ('alta', 'Alta'),
     ]
 
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
 
-    fecha_apertura = models.DateTimeField(auto_now_add=True)
-    fecha_cierre = models.DateTimeField(null=True, blank=True)
-
-    estado = models.CharField(max_length=20, choices=ESTADO, default='OPEN')
-    prioridad = models.CharField(max_length=20, choices=PRIORIDAD, default='MEDIUM')
-
-    usuario_reporta = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="tickets_reportados"
+    estado = models.CharField(
+        max_length=50,
+        choices=ESTADOS,
+        default='no_empezado'
     )
 
-    tecnico_asignado = models.ForeignKey(
-        Technician,
+    prioridad = models.CharField(
+        max_length=50,
+        choices=PRIORIDADES,
+        default='media'
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    tecnico = models.ForeignKey(
+        Tecnico,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
-        related_name="tickets_asignados"
+        blank=True
     )
 
     def __str__(self):
@@ -46,61 +74,15 @@ class Ticket(models.Model):
 
 
 class Comentario(models.Model):
-
     ticket = models.ForeignKey(
         Ticket,
         on_delete=models.CASCADE,
         related_name="comentarios"
     )
 
-    fecha = models.DateTimeField(auto_now_add=True)
+    autor = models.CharField(max_length=100)
     texto = models.TextField()
-
-    autor = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="comentarios"
-    )
-
-    def __str__(self):
-        return f"Comentario en {self.ticket.titulo}"
-
-
-class TicketHistory(models.Model):
-
-    ticket = models.ForeignKey(
-        Ticket,
-        on_delete=models.CASCADE,
-        related_name="historial"
-    )
-
-    estado_anterior = models.CharField(max_length=20)
-    estado_nuevo = models.CharField(max_length=20)
-
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.ticket.titulo}: {self.estado_anterior} → {self.estado_nuevo}"
-
-
-class Tag(models.Model):
-
-    nombre = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.nombre
-
-
-class Attachment(models.Model):
-
-    ticket = models.ForeignKey(
-        Ticket,
-        on_delete=models.CASCADE,
-        related_name="adjuntos"
-    )
-
-    archivo = models.FileField(upload_to='tickets/')
-    fecha = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.archivo.name
+        return f"Comentario de {self.autor}"

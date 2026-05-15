@@ -1,64 +1,76 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Ticket, Comentario
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializers import TicketSerializer
 
-def ticket_list(request):
-    tickets = Ticket.objects.all().order_by('-fecha_apertura')
-    return render(request, 'tickets/ticket_list.html', {
-        'tickets': tickets
-    })
+from .models import Ticket, Comentario
+from .serializer import TicketSerializer, ComentarioSerializer
 
 
-def ticket_detail(request, id):
-    ticket = get_object_or_404(Ticket, id=id)
-
-    if request.method == 'POST':
-
-        if 'texto' in request.POST:
-            Comentario.objects.create(
-                ticket=ticket,
-                autor=request.POST['autor'],
-                texto=request.POST['texto']
-            )
-            return redirect('ticket_detail', id=ticket.id)
-
-        if 'estado' in request.POST:
-            ticket.estado = request.POST['estado']
-            ticket.save()
-            return redirect('ticket_detail', id=ticket.id)
-
-    comentarios = Comentario.objects.filter(ticket=ticket).order_by('fecha')
-
-    return render(request, 'tickets/ticket_detail.html', {
-        'ticket': ticket,
-        'comentarios': comentarios
-    })
-
-def create_ticket(request):
-    if request.method == 'POST':
-        Ticket.objects.create(
-            titulo=request.POST['titulo'],
-            descripcion=request.POST['descripcion'],
-            estado='OPEN',
-            prioridad=request.POST['prioridad'],
-            usuario_reporta=request.POST['usuario_reporta']
-        )
-        return redirect('ticket_list')
-
-    return render(request, 'tickets/create_ticket.html')
-
-def delete_ticket(request, id):
-    ticket = Ticket.objects.get(id=id)
-    ticket.delete()
-    return redirect('ticket_list')
-
-@api_view(['GET'])
+# =========================
+# TICKETS
+# =========================
+@api_view(['GET', 'POST'])
 def api_tickets(request):
 
-    tickets = Ticket.objects.all()
+    # LISTAR
+    if request.method == 'GET':
+        tickets = Ticket.objects.all().order_by('-fecha_creacion')
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data)
 
-    serializer = TicketSerializer(tickets, many=True)
+    # CREAR
+    if request.method == 'POST':
+        serializer = TicketSerializer(data=request.data)
 
-    return Response(serializer.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+
+        return Response(serializer.errors, status=400)
+
+
+# =========================
+# EDITAR + BORRAR
+# =========================
+@api_view(['PUT', 'DELETE'])
+def editar_ticket(request, ticket_id):
+
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return Response({"error": "No encontrado"}, status=404)
+
+    # EDITAR
+    if request.method == 'PUT':
+        serializer = TicketSerializer(ticket, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
+    # BORRAR
+    if request.method == 'DELETE':
+        ticket.delete()
+        return Response({"message": "Eliminado"})
+
+
+# =========================
+# COMENTARIOS
+# =========================
+@api_view(['POST'])
+def crear_comentario(request, ticket_id):
+
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return Response({"error": "Ticket no existe"}, status=404)
+
+    comentario = Comentario.objects.create(
+        ticket=ticket,
+        autor=request.data.get('autor'),
+        texto=request.data.get('texto')
+    )
+
+    serializer = ComentarioSerializer(comentario)
+    return Response(serializer.data, status=201)
